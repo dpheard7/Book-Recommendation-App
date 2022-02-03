@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Goodreads Analysis App</title>
+    </head>
+    <body>
+        <h1>Book Recommender App</h1>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <div class="chartBox">
+            <canvas id="bubbleChart" width=900 height=400></canvas>
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <div class="chartBox1">
+            <canvas id="barChart" width=900 height=400></canvas>
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <div class="chartBox2">
+            <canvas id="barChart1" width=900 height=400></canvas>
+        </div>
+
+        <script>
+            var ctx = document.getElementById("bubbleChart").getContext("2d")
+            var bubbleChart = new Chart(ctx, {
+                type: "bubble",
+                data: {
+                    labels: {{ labels | safe }},
+                    datasets: [
+                        {
+                        backgroundColor: ["rgb(37, 153, 143)", "rgb(217, 28, 72)", "rgb(28, 31, 217)", "rgb(217, 126, 28)",
+                            "rgb(28, 217, 75)", "rgb(255, 0, 25)" ],
+                        radius: 5,
+                        label: "Rating by Page Count - Top 100",
+                        data: {{ values | safe }},
+                        fill: false,
+                        },
+                    ]
+                },
+                options: {
+                    {#tooltips: {#}
+                    {#    callbacks: {#}
+                    {#        title: function(tooltipItem, data) {#}
+                    {#            var title = data.tooltipText[tooltipItem[7].index];#}
+                    {#            return title;#}
+                    {#        }#}
+                    {#    }#}
+                    {##}
+                    {##}
+                    plugins: {
+                        legend: {
+                            labels: {
+                                boxWidth: 0
+                            },
+                            display: true
+                            },
+                        },
+                    scales: {
+                        y: [{
+                            ticks: {
+                                max: 3,
+                                min: 1
+                            }
+                        }]
+                    },
+                    responsive: false,
+                }
+            });
+
+
+            const ctx1 = document.getElementById("barChart").getContext("2d")
+            const barChart = new Chart(ctx1, {
+                type: "bar",
+                data: {
+                    labels: {{ labels1 | safe }},
+                    datasets: [
+                        {
+                        backgroundColor: ["rgb(37, 153, 143)", "rgb(217, 28, 72)", "rgb(28, 31, 217)", "rgb(217, 126, 28)",
+                            "rgb(28, 217, 75)", "rgb(255, 0, 25)" ],
+                        label: "Average Ratings of Top Selling Genres - Top 100",
+                        data: {{ values1 | safe }},
+                        fill: false,
+                        borderColor: "rgb(37, 153, 143)",
+                        },
+                    ]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            labels: {
+                                boxWidth: 0
+                            },
+                            display: true
+                            },
+                        },
+                    scales: {
+                        y: {
+                            ticks: {
+                                max: 3,
+                                min: 1
+                            }
+                        }
+                    },
+                    responsive: false,
+                }
+            });
+
+
+            const ctx2 = document.getElementById("barChart1").getContext("2d");
+            const barChart1 = new Chart(ctx2, {
+                type: "bar",
+                data: {
+                    labels: {{ labels2 | safe }},
+                    datasets: [{
+                        backgroundColor: ["rgb(37, 153, 143)", "rgb(217, 28, 72)", "rgb(28, 31, 217)", "rgb(217, 126, 28)",
+                            "rgb(28, 217, 75)", "rgb(255, 0, 25)"],
+                        label: "Rating by Major Genre - Top 100",
+                        data: {{ values2 | safe }},
+                        fill: false,
+                    }]
+                },
+                options: {
+                    elements: {},
+                    plugins: {
+                        legend: {
+                            labels: {
+                                boxWidth: 0
+                            },
+                            display: true
+                        },
+                    },
+                    responsive: false,
+                }
+            });
+        </script>
+    <br>
+    <br>
+    </body>
+</html>
