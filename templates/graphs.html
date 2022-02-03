@@ -32,6 +32,14 @@
             <canvas id="barChart1" width=900 height=400></canvas>
         </div>
 
+        <div class="queryForm">
+            <form class="form-inline my-2 my-lg-0" method="GET">
+                <input class="form=control-mr-sm-2"
+                type="search" placeholder="Search" name="query">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit"></button>
+            </form>
+        </div>
+
         <script>
             var ctx = document.getElementById("bubbleChart").getContext("2d")
             var bubbleChart = new Chart(ctx, {

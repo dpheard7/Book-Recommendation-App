@@ -55,19 +55,6 @@ dataset.drop(low_ratings, inplace=True)
 # Remove all non-English books
 dataset.drop(dataset[dataset["lang"] != "English"].index, inplace=True)
 
-# Calculate Z-score of book ratings, page count, review count, then remove outliers not within 3
-# standard deviations from mean
-dataset = dataset[(np.abs(stats.zscore(dataset["rate"])) < 3)]
-
-# Convert review count column to int and eliminate outliers
-dataset['review_count'] = dataset['review_count'].str.replace(',', '').astype(int)
-dataset["review_count"] = dataset["review_count"].astype(int)
-dataset = dataset[(np.abs(stats.zscore(dataset["review_count"])) < 3)]
-
-# Convert page count column to int and eliminate outliers
-dataset["num_of_page"] = dataset["num_of_page"].astype(int)
-dataset = dataset[(np.abs(stats.zscore(dataset["num_of_page"])) < 3)]
-
 # Convert rating count column to int and eliminate outliers
 dataset['rating_count'] = dataset['rating_count'].str.replace(',', '').astype(int)
 
@@ -126,6 +113,37 @@ def most_ratings():
     plt.show()
 
 
+def rating_by_rating_count():
+    ax = sns.relplot(x="rate", y="rating_count", data=dataset, color='red', sizes=(100, 200), height=7,
+                     marker='o')
+    ax.set_axis_labels("\nAverage Rating", "\nRating Count\n\n")
+    sns.set(rc={"figure.figsize": (1, 1)})
+    plt.tight_layout()
+    plt.show()
+
+
+# Draw plots
+rating_distribution()
+most_ratings()
+rating_by_rating_count()
+
+
+print("--------------------------------------------- Cosine Similarity -----------------------------------------------")
+
+# Convert review count column to int and eliminate outliers
+dataset['review_count'] = dataset['review_count'].str.replace(',', '').astype(int)
+dataset["review_count"] = dataset["review_count"].astype(int)
+dataset = dataset[(np.abs(stats.zscore(dataset["review_count"])) < 3)]
+
+# Calculate Z-score of book ratings, page count, review count, then remove outliers not within 3
+# standard deviations from mean
+dataset = dataset[(np.abs(stats.zscore(dataset["rate"])) < 3)]
+
+# Convert page count column to int and eliminate outliers
+dataset["num_of_page"] = dataset["num_of_page"].astype(int)
+dataset = dataset[(np.abs(stats.zscore(dataset["num_of_page"])) < 3)]
+
+
 def heatmap_corr():
     fig = plt.gcf()
     fig.set_size_inches(8, 8)
@@ -139,25 +157,6 @@ def heatmap_corr():
     cb.ax.tick_params(labelsize=10)
     plt.title('Correlation Matrix\n\n', fontsize=10)
     plt.show()
-
-
-def rating_by_rating_count():
-    ax = sns.relplot(x="rate", y="rating_count", data=dataset, color='red', sizes=(100, 200), height=7,
-                     marker='o')
-    ax.set_axis_labels("\nAverage Rating", "\nRating Count\n\n")
-    sns.set(rc={"figure.figsize": (1, 1)})
-    plt.tight_layout()
-    plt.show()
-
-
-# Draw plots
-rating_distribution()
-most_ratings()
-heatmap_corr()
-rating_by_rating_count()
-
-
-print("--------------------------------------------- Cosine Similarity -----------------------------------------------")
 
 
 # Create column to store combined features, then add to existing dataframe
@@ -183,6 +182,21 @@ col_matrix = CountVectorizer(stop_words="english").fit_transform(dataset1["new_C
 # Cosine similarity analysis of dataset to generate similarity scores
 cos_sim = cosine_similarity(col_matrix)
 print(cos_sim)
+print(cos_sim.shape)
+
+
+def rating_by_rating_count1():
+
+    ax = sns.relplot(x="rate", y="rating_count", data=dataset1, color='green', sizes=(100, 200), height=7,
+                     marker='o')
+    ax.set_axis_labels("\nAverage Rating", "\nRating Count\n\n")
+    sns.set(rc={"figure.figsize": (1, 1)})
+    plt.tight_layout()
+    plt.show()
+
+
+rating_by_rating_count1()
+heatmap_corr()
 
 print("-------------------------------------------- End Cosine Similarity --------------------------------------------")
 
@@ -253,9 +267,9 @@ regressor.fit(X_train, y_train)
 print(regressor.intercept_)
 print(regressor.coef_)
 y_pred = regressor.predict(X_test)
-dataset1 = pd.DataFrame({"Actual": y_test.flatten(), "Predicted": y_pred.flatten()})
+dataset2 = pd.DataFrame({"Actual": y_test.flatten(), "Predicted": y_pred.flatten()})
 
-linreg_graph = dataset1.head(10)
+linreg_graph = dataset2.head(10)
 print(linreg_graph)
 
 linreg_graph.plot(kind="bar", figsize=(16, 10))
@@ -265,19 +279,31 @@ plt.show()
 
 
 def linreg_scatter():
-    plt.figure(figsize=(20, 20))
+    plt.figure(figsize=(8, 8))
     plt.scatter(X_test, y_test, color="red")
     plt.plot(X_test, y_pred, color="black", linewidth=2)
     plt.show()
 
+# def linreg_bar():
+#     linreg_bar.plot(kind="bar", figsize=(16, 10))
+#     plt.grid(which="major", linestyle="-", linewidth="0.5", color="green")
+#     plt.grid(which="minor", linestyle="-", linewidth="0.5", color="black")
+#     plt.show()
 
-print(dataset1.dtypes)
+
+print(dataset2.dtypes)
 linreg_scatter()
 
-print("Mean absolute error: ", metrics.mean_absolute_error(y_test, y_pred))
-print("Mean squared error: ", metrics.mean_squared_error(y_test, y_pred))
-print("Root mean squared error: ", np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
-print("Regressor: ", regressor)
+mae = metrics.mean_absolute_error(y_test, y_pred)
+mse = metrics.mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(metrics.mean_squared_error(y_test, y_pred))
+
+print("Mean absolute error: ", mae)
+print("Mean squared error: ", mse)
+print("Root mean squared error: ", rmse)
+# print("Regressor: ", regressor)
+
+
 
 print("-------------------------------------------- End Linear Regression --------------------------------------------")
 
@@ -291,8 +317,8 @@ def draw_graphs():
     logging.basicConfig(filename='logger.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s '
                                                                            '%(threadName)s : %(message)s')
 
-    def blog():
-        app.logger.info('Info level log')
+    def log():
+        app.logger.info('Information level log')
         app.logger.warning('Warning level log')
         return render_template("graphs.html")
 
@@ -310,6 +336,9 @@ def draw_graphs():
     values = [row for row in pages]
 
     # ----------------------------------------------------------------------------------------------------
+
+
+
 
     category = ["Fantasy", "Romance", "Mystery"]
 

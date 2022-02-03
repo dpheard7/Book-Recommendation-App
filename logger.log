@@ -116,3 +116,5 @@ Traceback (most recent call last):
 KeyError: 'num_of_page'
 2022-02-03 12:03:55,233 INFO werkzeug Thread-1 (process_request_thread) : 127.0.0.1 - - [03/Feb/2022 12:03:55] "[35m[1mGET / HTTP/1.1[0m" 500 -
 2022-02-03 12:04:32,986 INFO werkzeug Thread-1 (process_request_thread) : 127.0.0.1 - - [03/Feb/2022 12:04:32] "GET / HTTP/1.1" 200 -
+2022-02-03 12:27:14,617 INFO werkzeug Thread-1 (process_request_thread) : 127.0.0.1 - - [03/Feb/2022 12:27:14] "GET / HTTP/1.1" 200 -
+2022-02-03 16:25:56,552 INFO werkzeug Thread-1 (process_request_thread) : 127.0.0.1 - - [03/Feb/2022 16:25:56] "GET / HTTP/1.1" 200 -
