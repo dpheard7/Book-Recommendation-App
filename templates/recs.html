@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link href="{{ url_for("static", filename="/stylesheets/style.css") }}" type="text/css" rel="stylesheet" />
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Goodreads Analysis App</title>
+    </head>
+    <body>
+        <h1>Book Recommender App</h1>#}
+
+            <table style="width: 100%">
+                {% if parsed_results %}
+                 <tr>
+                   {% for key in parsed_results[0] %}
+                        <th> {{ key }} </th>
+                       {% endfor %}
+                 </tr>
+                    {% endif %}
+
+                   {% for dict_item in parsed_results %}
+                   <tr>
+                       {% for value in dict_item.values() %}
+                           <td class="cells" style="background-color: antiquewhite; padding-left: 7px" > {{ value }} </td>
+                           {% endfor %}
+                   </tr>
+                    {% endfor %}
+            </table>
+        </div>
+    <br>
+    <br>
+    </body>
+</html>

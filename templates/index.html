@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
     <head>
+        <link rel="stylesheet" href="{{ url_for("static", filename="stylesheets/style.css") }}" type="text/css"/>
+
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Goodreads Analysis App</title>
@@ -31,14 +33,41 @@
         <div class="chartBox2">
             <canvas id="barChart1" width=900 height=400></canvas>
         </div>
-
-        <div class="queryForm">
-            <form class="form-inline my-2 my-lg-0" method="GET">
-                <input class="form=control-mr-sm-2"
-                type="search" placeholder="Search" name="query">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit"></button>
-            </form>
+        <br>
+        <br>
+        <div class="queryForm" style="margin-left: 200px;">
+            <div class="container">
+                <form class="search_form" method="POST" action="{{ url_for ("recommend") }}">
+                    <input height="30" class="form=control" name="book" required="required"
+                    type="search" placeholder="Search" >
+                    <button style="height: 30px;width: 175px;font-size: 15px; text-align: center" class="sub_button"
+                            type="submit">Recommend!</button>
+                </form>
+            </div>
         </div>
+
+        <table style="width: 100%">
+            <h1>Your results are...</h1>
+            {% if results %}
+             <tr>
+               {% for key in results[0] %}
+                    <th> {{ key }} </th>
+                   {% endfor %}
+             </tr>
+                {% endif %}
+
+               {% for dict_item in results %}
+               <tr>
+                   {% for value in dict_item.values() %}
+                       <td style="background-color: antiquewhite"> {{ value }} </td>
+                       {% endfor %}
+               </tr>
+                {% endfor %}
+        </table>
+        <br>
+        <br>
+        <a href="/">Back to home</a>
+
 
         <script>
             var ctx = document.getElementById("bubbleChart").getContext("2d")

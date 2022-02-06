@@ -1,10 +1,11 @@
 import logging
 
+import flask
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify, url_for, redirect, render_template_string
 from scipy import stats
 from sklearn import metrics
 from sklearn.feature_extraction.text import CountVectorizer
@@ -81,7 +82,7 @@ print("--------------------------------------------- End Read/Clean Data -------
 print("--------------------------------------- Data Exploration/Visualization ----------------------------------------")
 
 # Data exploration
-print(dataset.describe())
+print(f"data.describe: \n{dataset.describe()}")
 
 
 # Calculate ratings distribution
@@ -91,7 +92,7 @@ def rating_distribution():
     plt.title('Book Rating Distribution\n')
     plt.xlabel('\nRating')
     plt.ylabel('\nFrequency\n')
-    plt.show()
+    # plt.show()
 
 
 # Splits genre into lists
@@ -110,23 +111,23 @@ def most_ratings():
     ax = sns.barplot(popular_books, popular_books.index)
     ax.set(xlabel="\n\nRating Count (millions)", ylabel="Book Title\n\n")
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 
 def rating_by_rating_count():
+    fig = plt.gcf
     ax = sns.relplot(x="rate", y="rating_count", data=dataset, color='red', sizes=(100, 200), height=7,
                      marker='o')
     ax.set_axis_labels("\nAverage Rating", "\nRating Count\n\n")
     sns.set(rc={"figure.figsize": (1, 1)})
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 
 # Draw plots
 rating_distribution()
 most_ratings()
 rating_by_rating_count()
-
 
 print("--------------------------------------------- Cosine Similarity -----------------------------------------------")
 
@@ -144,63 +145,80 @@ dataset["num_of_page"] = dataset["num_of_page"].astype(int)
 dataset = dataset[(np.abs(stats.zscore(dataset["num_of_page"])) < 3)]
 
 
-def heatmap_corr():
-    fig = plt.gcf()
-    fig.set_size_inches(8, 8)
-    plt.matshow(dataset.corr(), fignum=fig.number)
-    plt.xticks(range(dataset.select_dtypes(['number']).shape[1]), dataset.select_dtypes(['number']).columns,
-               fontsize=8,
-               rotation=45)
-    plt.yticks(range(dataset.select_dtypes(['number']).shape[1]), dataset.select_dtypes(['number']).columns,
-               fontsize=8)
-    cb = plt.colorbar()
-    cb.ax.tick_params(labelsize=10)
-    plt.title('Correlation Matrix\n\n', fontsize=10)
-    plt.show()
+# def heatmap_corr():
+#
+#     dataset_heatmap = dataset.pivot
+#     # sns.heatmap = dataset_heatmap
+#
+#     # calculate the correlation matrix
+#     corr = dataset.corr()
+#
+#     # plot the heatmap
+#     sns.heatmap(dataset_heatmap,
+#                 xticklabels=corr.columns,
+#                 yticklabels=corr.columns)
+
+    # fig = plt.figure()
+    # fig.set_size_inches(8, 8)
+    # plt.matshow(dataset.corr(), fignum=fig.number)
+    # plt.xticks(range(dataset.select_dtypes(['number', "object"]).shape[1]), dataset.select_dtypes(["number", 'object']).columns,
+    #            fontsize=8,
+    #            rotation=45)
+    # plt.yticks(range(dataset.select_dtypes(['number', "object"]).shape[1]), dataset.select_dtypes(["number", 'object']).columns,
+    #            fontsize=8)
+    # cb = plt.colorbar()
+    # cb.ax.tick_params(labelsize=10)
+    # plt.title('Correlation Matrix\n\n', fontsize=10)
+    # plt.show()
+
+
+print("-------------------------------------------- End Cosine Similarity --------------------------------------------")
+
+print("-------------------------------------------- Re-indexing Dataframe --------------------------------------------")
 
 
 # Create column to store combined features, then add to existing dataframe
 def combine_cols(pd_frame):
-    # Split lists of lists in genre column
+
+    # Split list of lists in genre column
     pd_frame["genre_string"] = pd_frame['genre'].apply(lambda x: ','.join(map(str, x)))
-    # pd_frame["author_string"] = pd_frame['author'].apply(lambda x: ','.join(map(str, x)))
+    # print(pd_frame["genre_string"].head(5))
 
     t = pd.DataFrame(data=pd_frame, columns=["title", "genre_string", "author"])
     t["combined"] = t.values.tolist()
     pd_frame["new_Column"] = t["combined"]
     pd.set_option("display.max_colwidth", None)
-    # print(pd_frame.head(5))
     return pd_frame
 
 
 # Create new dataset with column containing combined features
 dataset1 = combine_cols(dataset)
-
-# Transform combined column to a matrix of word counts, using stop words to omit articles and such
-col_matrix = CountVectorizer(stop_words="english").fit_transform(dataset1["new_Column"].astype(str))
-
-# Cosine similarity analysis of dataset to generate similarity scores
-cos_sim = cosine_similarity(col_matrix)
-print(cos_sim)
-print(cos_sim.shape)
+boolean = not dataset1["title"].is_unique
+print(f"boolean: {boolean}")
+dataset1 = dataset1.drop_duplicates(subset=["title"], keep="first")
+print(f"boolean: {boolean}")
 
 
-def rating_by_rating_count1():
-
-    ax = sns.relplot(x="rate", y="rating_count", data=dataset1, color='green', sizes=(100, 200), height=7,
-                     marker='o')
-    ax.set_axis_labels("\nAverage Rating", "\nRating Count\n\n")
-    sns.set(rc={"figure.figsize": (1, 1)})
-    plt.tight_layout()
-    plt.show()
+# Double-checking to make sure all rows are re-indexed and start from index 0
+# print(dataset1.head(5))
 
 
-rating_by_rating_count1()
-heatmap_corr()
+def transform_data(data_combine, data_plot):
 
-print("-------------------------------------------- End Cosine Similarity --------------------------------------------")
+    count = CountVectorizer(stop_words='english')
+    count_matrix = count.fit_transform(data_combine['new_Column'].astype(str))
+    cos_sim = cosine_similarity(count_matrix)
 
-print("-------------------------------------------- Re-indexing Dataframe --------------------------------------------")
+    # TODO This works, but trying something new above
+    # # Transform combined column to a matrix of word counts, using stop words to omit articles and such
+    # col_matrix = CountVectorizer(stop_words="english").fit_transform(dataset1["new_Column"].astype(str))
+    #
+    # # Cosine similarity analysis of dataset to generate similarity scores
+    # cos_sim = cosine_similarity(col_matrix)
+    print(f"Cos sim: {cos_sim}")
+
+    return cos_sim
+
 
 # Resetting book id's using current dataframe index values, then creating a new column of book id's which correspond
 # to the new index values
@@ -209,80 +227,130 @@ dataset1.reset_index(inplace=True, drop=True)
 dex = dataset1.index.values
 # print(dex[0:4])
 dataset1.insert(0, column="book_id", value=dex)
-# print(dataset1.head(5))
 
-# Double-checking to make sure all rows are re-indexed and start from index 0
-# print(dataset1.head(5))
 
-# Testing to see if dataframe index matches random number
-print(dataset1["title"][5])
-test_title = dataset1["title"][5]
-print("Test title is: " + test_title)
+def rec_engine(title, data, combine, transform):
+    indices = pd.Series(data.index, index=dataset1["title"])
+    index = indices[title]
 
-# Testing to make sure we can retrieve the book id
-book_id = dataset1[dataset1.title == test_title].index.values[0]
-print(f"Book ID: {book_id}")
+    cs_scores = list(enumerate(transform[index]))
+    cs_scores = sorted(cs_scores, key=lambda x: x[1], reverse=True)
+    cs_scores = cs_scores[1:6]
 
-# Creating a list of tuples containing the book id and similiarity score for the test book
-scores = list(enumerate(cos_sim[book_id]))
-print(f"Scores are: {scores[0:5]}")
+    book_indices = [i[0] for i in cs_scores]
 
-# Sort list of similar books in descending order
-sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
-top_five = (sorted_scores[1:6])
-print(top_five)
-# print(sorted_scores[1:5])
+    # book_id = dataset1["book_id"].iloc[book_indices]
+    title = dataset1["title"].iloc[book_indices]
+    genres = dataset1["genre"].iloc[book_indices]
+    rating = dataset1["rate"].iloc[book_indices]
+
+    # recommendation_data = pd.DataFrame(columns=['Book_Id', 'Name', 'Genre'])
+    recommendation_data = pd.DataFrame(columns=["Title", "Genre", "Rating"])
+
+    # recommendation_data['Book_Id'] = book_id
+    recommendation_data['Title'] = title
+    recommendation_data['Genre'] = genres
+    recommendation_data['Rating'] = rating
+
+    return recommendation_data
+
+
+def get_book_data():
+    book_data = dataset1.drop_duplicates(subset=["title"], keep="first")
+    print(f"boolean: {boolean}")
+    # book_data["title"] = book_data["title"].str.lower()
+    return book_data
+
+
+# print(dataset1[dataset1["title"].str.contains(test_title, regex=False, case=False)].title.head(5))
+print(dataset1.title.head(20))
+
+
+def get_matches(book_title):
+    # book_title = book_title.lower()
+    # book_title = dataset1[dataset1["title"].str.contains(book_title, regex=False, case=False)].title
+    # user_input = dataset1[dataset1["title"].str.contains("harry", regex=False, case=False)].title.head(5)
+    # book_title = test_title
+    find_book = get_book_data()
+    combine_result = combine_cols(find_book)
+    print("get_matches/combine_cols")
+    transform_result = transform_data(combine_result, find_book)
+    print("transform_result")
+    if book_title not in find_book["title"].unique():
+        return "Sorry, we don't have that book yet."
+    else:
+        recommendations = rec_engine(book_title, find_book, combine_result, transform_result)
+        return recommendations.to_dict("records")
+
+
+# print(get_matches("Proven Guilty (The Dresden Files, #8)"))
+# print(get_matches("Harry"))
+
+# THIS ONE WORKS
+# print(dataset1[dataset1["title"].str.contains("harry", regex=False, case=False)].title.head(5))
+
+
+def rating_by_rating_count1():
+    ax = sns.relplot(x="rate", y="rating_count", data=dataset1, color='green', sizes=(100, 200), height=7,
+                     marker='o')
+    ax.set_axis_labels("\nAverage Rating", "\nRating Count\n\n")
+    sns.set(rc={"figure.figsize": (1, 1)})
+    plt.tight_layout()
+    # plt.show()
+
+
+rating_by_rating_count1()
+
 
 print("------------------------------------------ End Re-indexing Dataframe ------------------------------------------")
 
-# Create loop to print the titles of the first five books from the sorted list
-print(dataset1.head(5))
-j = 0
-print("The 5 most recommended books to " + test_title + " are: \n")
-
-for item in top_five:
-    book_title = dataset1[dataset1["book_id"] == item[0]]["title"].values[0]
-    print(j + 1, book_title)
-    j = j + 1
-    if j >= 6:
-        print(book_title)
-        break
-
 print("---------------------------------------------- Linear Regression ----------------------------------------------")
 
-print(dataset1.genre_string.head(5))
-# print(dataset.rate.isnull().any().any())
-# dummy = pd.get_dummies(dataset1[["genre_string"]])
-dataset1["genre_string"] = dataset1.genre_string.astype("category")
-X = dataset1["genre_string"].values.reshape(-1, 1)
-y = dataset1["rate"].values.reshape(-1, 1)
+# Testing linear regression with sample genre
+dataset5 = dataset1
+print(f"Shape: {dataset5.shape}")
+dataset5 = dataset5[dataset5["genre_string"].str.contains("Fantasy")]
+print(dataset5["genre_string"].head(5))
+
+dataset5["genre_string"] = dataset5.genre_string.astype("category")
+X = dataset5["genre_string"].values.reshape(-1, 1)
+y = dataset5["rate"].values.reshape(-1, 1)
 # X = pd.get_dummies(dataset1[["genre_string"]])
+
+# TODO This is the OG linear regression that works
+# dataset1["genre_string"] = dataset1.genre_string.astype("category")
+# X = dataset1["genre_string"].values.reshape(-1, 1)
+# y = dataset1["rate"].values.reshape(-1, 1)
 
 # X = pd.get_dummies(data=X, drop_first=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-print(X_train.shape)
+print("x train shape", X_train.shape)
 print(y_train.shape)
 regressor = LinearRegression()
 regressor.fit(X_train, y_train)
 print(regressor.intercept_)
 print(regressor.coef_)
 y_pred = regressor.predict(X_test)
-dataset2 = pd.DataFrame({"Actual": y_test.flatten(), "Predicted": y_pred.flatten()})
+dataset3 = pd.DataFrame({"Actual": y_test.flatten(), "Predicted": y_pred.flatten()})
+# dataset2 = pd.DataFrame({"Actual": y_test.flatten(), "Predicted": y_pred.flatten()})
 
-linreg_graph = dataset2.head(10)
-print(linreg_graph)
-
+# Graphing first 20 to visualize actual vs predicted values
+linreg_graph = dataset3.head(20)
 linreg_graph.plot(kind="bar", figsize=(16, 10))
 plt.grid(which="major", linestyle="-", linewidth="0.5", color="green")
 plt.grid(which="minor", linestyle="-", linewidth="0.5", color="black")
-plt.show()
+
+
+# plt.show()
 
 
 def linreg_scatter():
+    plt.figure()
     plt.figure(figsize=(8, 8))
     plt.scatter(X_test, y_test, color="red")
     plt.plot(X_test, y_pred, color="black", linewidth=2)
-    plt.show()
+    # plt.show()
+
 
 # def linreg_bar():
 #     linreg_bar.plot(kind="bar", figsize=(16, 10))
@@ -291,7 +359,7 @@ def linreg_scatter():
 #     plt.show()
 
 
-print(dataset2.dtypes)
+print(dataset5.dtypes)
 linreg_scatter()
 
 mae = metrics.mean_absolute_error(y_test, y_pred)
@@ -301,18 +369,73 @@ rmse = np.sqrt(metrics.mean_squared_error(y_test, y_pred))
 print("Mean absolute error: ", mae)
 print("Mean squared error: ", mse)
 print("Root mean squared error: ", rmse)
-# print("Regressor: ", regressor)
 
 
+def heatmap_corr():
+    pd_frame = dataset1.drop(["book_id", "genre", "new_Column", "title", "lang", "date_published",
+                              "publisher", "award", "genre_string", "author"], 1)
+    print(f"head =\n {pd_frame.head(20)}")
+    # dataset_heatmap = dataset1.pivot
+
+    # sns.heatmap = dataset_heatmap
+
+    # calculate the correlation matrix
+    corr = dataset1.corr()
+
+    # plot the heatmap
+    sns.heatmap(corr,
+                xticklabels=corr.columns,
+                yticklabels=corr.columns)
+    plt.show()
+
+
+heatmap_corr()
 
 print("-------------------------------------------- End Linear Regression --------------------------------------------")
 
 print("------------------------------------------------ Run Flask App ------------------------------------------------")
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 
 
-@app.route("/")
+# @app.route("/recommend", methods=["POST", "GET"])
+# def recommend():
+#     book_1 = request.form.get("book")
+#     results = get_matches(book_1)
+#     parsed_results = jsonify(results)
+#     return parsed_results, render_template("recs.html")
+
+@app.route("/recommend", methods=["POST", "GET"])
+def recommend():
+    book_1 = request.form.get("book")
+    results = get_matches(book_1)
+    parsed_results = jsonify(results)
+    return render_template_string('''
+        <table style="width: 100%">
+            <h1>Your results are...</h1>
+            {% if results %}
+             <tr>
+               {% for key in results[0] %}
+                    <th> {{ key }} </th>
+                   {% endfor %}
+             </tr>
+                {% endif %}
+
+               {% for dict_item in results %}
+               <tr>
+                   {% for value in dict_item.values() %}
+                       <td style="background-color: antiquewhite"> {{ value }} </td>
+                       {% endfor %}
+               </tr>
+                {% endfor %}
+        </table>
+        <br>
+        <br>
+        <a href="/">Back to home</a>
+    ''', results=results)
+
+
+@app.route("/", methods=["GET", "POST"])
 def draw_graphs():
     logging.basicConfig(filename='logger.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s '
                                                                            '%(threadName)s : %(message)s')
@@ -320,7 +443,7 @@ def draw_graphs():
     def log():
         app.logger.info('Information level log')
         app.logger.warning('Warning level log')
-        return render_template("graphs.html")
+        return render_template("index.html")
 
     # Display ratings by page count
     # ----------------------------------------------------------------------------------------------------
@@ -336,9 +459,6 @@ def draw_graphs():
     values = [row for row in pages]
 
     # ----------------------------------------------------------------------------------------------------
-
-
-
 
     category = ["Fantasy", "Romance", "Mystery"]
 
@@ -378,11 +498,11 @@ def draw_graphs():
     category1 = ["Fiction", "Nonfiction"]
 
     dataset2 = dataset[dataset['genre'].str.join(' ').str.contains('Fiction')]
-    dataset3 = dataset[dataset['genre'].str.join(' ').str.contains('Nonfiction')]
+    dataset2a = dataset[dataset['genre'].str.join(' ').str.contains('Nonfiction')]
 
     for i in dataset2["rate"].head(100):
         fiction_ratings.append(i)
-    for j in dataset3["rate"].head(100):
+    for j in dataset2a["rate"].head(100):
         nonfiction_ratings.append(j)
     fiction_mean = np.mean(fiction_ratings)
     print(fiction_mean)
@@ -393,7 +513,7 @@ def draw_graphs():
     labels2 = category1
     values2 = [row for row in f_nf_ratings]
 
-    return render_template("graphs.html", labels=labels, values=values, labels1=labels1, values1=values1,
+    return render_template("index.html", labels=labels, values=values, labels1=labels1, values1=values1,
                            labels2=labels2, values2=values2)
 
 
@@ -418,7 +538,7 @@ if __name__ == '__main__':
 #
 # return df.to_html(header="true", table_id="table")
 
-# return render_template('graphs.html', column_names=df.columns.values, row_data=list(df.values.tolist()))
+# return render_template('index.html', column_names=df.columns.values, row_data=list(df.values.tolist()))
 
 # Printing first 26 rows to check data
 # pd.set_option("display.max_columns", 30)
@@ -537,8 +657,8 @@ if __name__ == '__main__':
 #         return render_template("login.html", info="Invalid password. Please check and try again.")
 #     else:
 #         if request.form["password"] == 'admin' and request.form['username'] == 'admin':
-#             return render_template("graphs.html")
-#     return render_template("graphs.html")
+#             return render_template("index.html")
+#     return render_template("index.html")
 
 
 # def popular_authors():
@@ -600,15 +720,71 @@ if __name__ == '__main__':
 #
 #     # hist_data = dataset.copy()
 #
-#     fig1 = plt.gcf()
-#     fig1.set_size_inches(12, 12)
-#     plt.matshow(cos_sim.corr(), fignum=fig1.number)
-#     plt.xticks(range(dataset.select_dtypes(['object', 'number']).shape[1]), dataset.select_dtypes(['object', 'number']).columns,
-#                fontsize=8,
-#                rotation=45)
-#     plt.yticks(range(dataset.select_dtypes(['object', 'number']).shape[1]), dataset.select_dtypes(['object', 'number']).columns,
-#                fontsize=8)
-#     cb = plt.colorbar()
-#     cb.ax.tick_params(labelsize=10)
-#     plt.title('Correlation Matrix\n\n', fontsize=10)
-#     plt.show()
+# fig1 = plt.gcf() fig1.set_size_inches(12, 12) plt.matshow(cos_sim.corr(), fignum=fig1.number) plt.xticks(range(
+# dataset.select_dtypes(['object', 'number']).shape[1]), dataset.select_dtypes(['object', 'number']).columns,
+# fontsize=8, rotation=45) plt.yticks(range(dataset.select_dtypes(['object', 'number']).shape[1]),
+# dataset.select_dtypes(['object', 'number']).columns, fontsize=8) cb = plt.colorbar() cb.ax.tick_params(
+# labelsize=10) plt.title('Correlation Matrix\n\n', fontsize=10) plt.show()
+
+# # Create loop to print the titles of the first five books from the sorted list
+# print(dataset1.head(5))
+# j = 0
+# print("The 5 most recommended books to " + test_title + " are: \n")
+#
+# for item in top_five:
+#     book_title = dataset1[dataset1["book_id"] == item[0]]["title"].values[0]
+#     print(j + 1, book_title)
+#     j = j + 1
+#     if j >= 6:
+#         print(book_title)
+#         break
+
+
+# @app.route("/search", methods=["GET", "POST"])
+# def search():
+#     form = SearchForm()
+#     if form.validate_on_submit():
+#         search_term = form.query.data
+#         results = Foo.query.all()
+#         return render_template('index.html', form=form, results=results)
+#     return render_template('index.html', form=form)
+
+
+# @app.route("/get_matches", methods=["GET"])
+# def rec_books():
+#     results = get_matches(request.args.get("title"))
+#     return jsonify(results), render_template("index.html")
+
+# @app.route("/rec_books", methods=["GET", "POST"])
+# def rec_books():
+#     results = get_matches(request.args.get("title"))
+#     return results  # results, redirect(url_for("index"))  # jsonify(results), render_template("index.html")
+
+# @app.route("/")
+# def home():
+#     return render_template("index.html")
+#
+#
+# print(dataset1.genre_string.head(5))
+# print(dataset.rate.isnull().any().any())
+# dummy = pd.get_dummies(dataset1[["genre_string"]])
+
+# TODO Leave this here for cosine similarity test purposes
+# Testing to see if dataframe index matches random number
+# print(dataset1["title"][5])
+# test_title = dataset1["title"][5]
+# print("Test title is: " + test_title)
+#
+# # Testing to make sure we can retrieve the book id
+# book_id = dataset1[dataset1.title == test_title].index.values[0]
+# print(f"Book ID: {book_id}")
+#
+# # Creating a list of tuples containing the book id and similiarity score for the test book
+# scores = list(enumerate(cos_sim[book_id]))
+# print(f"Scores are: {scores[0:5]}")
+#
+# # Sort list of similar books in descending order
+# sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
+# top_five = (sorted_scores[1:6])
+# print(top_five)
+# print(sorted_scores[1:5])
