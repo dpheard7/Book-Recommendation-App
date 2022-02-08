@@ -35,35 +35,35 @@
         </div>
         <br>
         <br>
-        <div class="queryForm" style="margin-left: 200px;">
+        <div class="queryForm" id="container1" style="margin-left: 10px;">
             <div class="container">
                 <form class="search_form" method="POST" action="{{ url_for ("recommend") }}">
                     <input height="30" class="form=control" name="book" required="required"
-                    type="search" placeholder="Search" >
+                    type="search" placeholder="Book Title" >
                     <button style="height: 30px;width: 175px;font-size: 15px; text-align: center" class="sub_button"
                             type="submit">Recommend!</button>
                 </form>
             </div>
         </div>
 
-        <table style="width: 100%">
-            <h1>Your results are...</h1>
-            {% if results %}
-             <tr>
-               {% for key in results[0] %}
-                    <th> {{ key }} </th>
-                   {% endfor %}
-             </tr>
-                {% endif %}
-
-               {% for dict_item in results %}
-               <tr>
-                   {% for value in dict_item.values() %}
-                       <td style="background-color: antiquewhite"> {{ value }} </td>
-                       {% endfor %}
-               </tr>
-                {% endfor %}
-        </table>
+{#        <table style="width: 100%; padding-top: 25px">#}
+{#            <h1 style="padding-left: 25px">Your results are...</h1>#}
+{#            {% if results %}#}
+{#             <tr>#}
+{#               {% for key in results[0] %}#}
+{#                    <th> {{ key }} </th>#}
+{#                   {% endfor %}#}
+{#             </tr>#}
+{#                {% endif %}#}
+{##}
+{#               {% for dict_item in results %}#}
+{#               <tr>#}
+{#                   {% for value in dict_item.values() %}#}
+{#                       <td style="background-color: antiquewhite"> {{ value }} </td>#}
+{#                       {% endfor %}#}
+{#               </tr>#}
+{#                {% endfor %}#}
+{#        </table>#}
         <br>
         <br>
         <a href="/">Back to home</a>
@@ -87,15 +87,6 @@
                     ]
                 },
                 options: {
-                    {#tooltips: {#}
-                    {#    callbacks: {#}
-                    {#        title: function(tooltipItem, data) {#}
-                    {#            var title = data.tooltipText[tooltipItem[7].index];#}
-                    {#            return title;#}
-                    {#        }#}
-                    {#    }#}
-                    {##}
-                    {##}
                     plugins: {
                         legend: {
                             labels: {
@@ -126,7 +117,7 @@
                         {
                         backgroundColor: ["rgb(37, 153, 143)", "rgb(217, 28, 72)", "rgb(28, 31, 217)", "rgb(217, 126, 28)",
                             "rgb(28, 217, 75)", "rgb(255, 0, 25)" ],
-                        label: "Average Ratings of Top Selling Genres - Top 100",
+                        label: "Average Ratings of Top Selling Subgenres - Top 100",
                         data: {{ values1 | safe }},
                         fill: false,
                         borderColor: "rgb(37, 153, 143)",

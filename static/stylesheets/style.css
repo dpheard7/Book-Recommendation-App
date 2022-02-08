@@ -1,9 +1,12 @@
 .container {
     position: relative;
-    left: 500px;
+    left: 5px;
     border: black;
 }
-/*.sub_button {*/
-/*    font-size: 25px;*/
-/*}*/
+
+#container1 {
+    position:absolute;
+    top: 50px;
+    right: 350px;
+}
 
